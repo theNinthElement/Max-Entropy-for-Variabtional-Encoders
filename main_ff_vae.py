@@ -2,17 +2,17 @@
 import numpy as np
 #import librosa
 #from sklearn.model_selection import StratifiedKFold
-import keras
-from mixup_generator import MixupGenerator
-from random_eraser import get_random_eraser
+from tensorflow import keras
+#from mixup_generator import MixupGenerator
+#from random_eraser import get_random_eraser
 import matplotlib.pyplot as plt
-import os
-from keras.engine.topology import Layer
+import os as os
+#from keras.engine.topology import Layer
 from keras import backend as K
 #import tensorflow as tf
 import scipy.io as scio
 
-DATASET=4
+DATASET=71
 CONV = True
 l2_reg = .01
 
@@ -26,7 +26,7 @@ if DATASET==5:
    mat=scio.loadmat('tree_cnnannotft2_red.mat')
    width_shift_range=7
    height_shift_range=3
-elif DATASET==4:
+elif DATASET==45:
    N1=45
    N2=20
    mat=scio.loadmat('three_cnnannotft2_red.mat')
@@ -37,20 +37,38 @@ elif DATASET==21:
    N2=14
    mat=scio.loadmat('mnist_3rg1.mat')
    width_shift_range=0
-   height_shift_range=0
-elif DATASET==81:
+   height_shift_range=0   
+elif DATASET==71:
+    N1=28
+    N2=28
+    mat=scio.loadmat('ds717273.mat')
+    width_shift_range=0
+    height_shift_range=0   
+elif DATASET==72:
+    N1=28
+    N2=28
+    mat=scio.loadmat('ds717273.mat')
+    width_shift_range=0
+    height_shift_range=0
+elif DATASET==73:
+    N1=28
+    N2=28
+    mat=scio.loadmat('ds717273.mat')
+    width_shift_range=0
+    height_shift_range=0
+elif DATASET==81: # gaussian distributed character 3
    N1=28
    N2=28
    mat=scio.loadmat('mnist_3g1.mat')
    width_shift_range=0
    height_shift_range=0
-elif DATASET==82:
+elif DATASET==82: # character 8 
    N1=28
    N2=28
    mat=scio.loadmat('mnist_3g2.mat')
    width_shift_range=0
    height_shift_range=0
-elif DATASET==83:
+elif DATASET==83: # character 9 
    N1=28
    N2=28
    mat=scio.loadmat('mnist_3g3.mat')
@@ -243,7 +261,9 @@ def vae_def_mnist(feat_length, nceps, latent_dim=32):
         # last one has to have 1 kernel
         x = keras.layers.Conv2D(1, kernel_size=3, padding='same', kernel_regularizer=keras.regularizers.l2(l2_reg), \
                   bias_regularizer=keras.regularizers.l2(l2_reg))(x)
-        x = keras.layers.LeakyReLU(alpha=0.1)(x)
+        #x = keras.layers.LeakyReLU(alpha=0.1)(x) # sigmoid model 
+        #x= keras.layers.Softmax()(x)
+        x = keras.activations.sigmoid(x)
     else:
         x = keras.layers.Dense(8, kernel_regularizer=keras.regularizers.l2(l2_reg), bias_regularizer=keras.regularizers.l2(l2_reg))(latent_input)
         x = keras.layers.LeakyReLU(alpha=0.1)(x)
@@ -252,7 +272,9 @@ def vae_def_mnist(feat_length, nceps, latent_dim=32):
         x = keras.layers.Dense(48, kernel_regularizer=keras.regularizers.l2(l2_reg), bias_regularizer=keras.regularizers.l2(l2_reg))(x)
         x = keras.layers.LeakyReLU(alpha=0.1)(x)
         x = keras.layers.Dense(nceps*feat_length, kernel_regularizer=keras.regularizers.l2(l2_reg), bias_regularizer=keras.regularizers.l2(l2_reg))(x)
-        x = keras.layers.LeakyReLU(alpha=0.1)(x)
+        #x = keras.layers.LeakyReLU(alpha=0.1)(x) # use a sigmoid here maybe 
+        #x= keras.layers.Softmax()(x)
+        x = keras.activations.sigmoid(x)
 
     model_output = keras.layers.Reshape((nceps,feat_length,1), input_shape=(nceps*feat_length, ))(x)
 
@@ -315,6 +337,8 @@ if DATASET==81 or DATASET==82 or DATASET==83 :
    input, model_output, z_mean, z_log_var = vae_def_mnist(feat_length=N1, nceps=N2, latent_dim = latent_dim)
 elif DATASET==4 or DATASET==5:
     input, model_output, z_mean, z_log_var = vae_def_goog(feat_length=N1, nceps=N2, latent_dim = latent_dim)
+elif DATASET==71 or DATASET==72 or DATASET==73 :
+    input, model_output, z_mean, z_log_var = vae_def_mnist(feat_length=N1, nceps=N2, latent_dim = latent_dim)
 
 vae = keras.Model(inputs=[input], outputs=[model_output])
 # VAE loss
@@ -322,10 +346,10 @@ reconstruction_loss = keras.losses.mean_squared_error(input, model_output)
 reconstruction_loss *= N1*N2
 kl_loss = 1 + z_log_var - K.square(z_mean) - K.exp(z_log_var)
 kl_loss = K.sum(kl_loss, axis=-1)
-kl_loss *= -0.5
+kl_loss *= -0.5 # multiply that by zero and get auto encoder
 vae_loss = K.mean(reconstruction_loss) + K.mean(kl_loss)
 vae.add_loss(vae_loss)
-vae.compile(optimizer=keras.optimizers.adam(decay=0.0001))
+vae.compile(optimizer=keras.optimizers.Adam(decay=0.0001))
 print(vae.summary())
 
 # fit model
