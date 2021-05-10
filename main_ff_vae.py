@@ -308,8 +308,8 @@ Xv = np.expand_dims(np.fliplr(Xv.reshape((N1, N2, Xv.shape[1])).transpose()), ax
 #num_classes = tch.shape[1]
 batch_size = 32
 batch_size_test = 32
-epochs = 100
-aeons = 1000
+epochs = 50
+aeons = 10
 alpha = 1
 
 train_data = np.copy(X)#np.copy(X[tch[:, j]])
