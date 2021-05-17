@@ -5,8 +5,10 @@ import numpy as np
 from tensorflow import keras
 #from mixup_generator import MixupGenerator
 #from random_eraser import get_random_eraser
+#from theano import keras
 import matplotlib.pyplot as plt
 import os as os
+os.environ['KERAS_BACKEND'] = 'theano'
 #from keras.engine.topology import Layer
 from keras import backend as K
 #import tensorflow as tf
